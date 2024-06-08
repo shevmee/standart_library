@@ -1,0 +1,5 @@
+# ninja log v6
+1	44	1717874978714167301	build.ninja	ae33e200bbd97e9d
+2	830	1717851955772340446	CMakeFiles/function.dir/main.cpp.o	1fa17f3f9ccaf374
+747	793	1717852489750384913	function	b7cc97790cd4ab1f
+1	747	1717852489004304785	CMakeFiles/function.dir/basic_usage.cpp.o	92ee89e74081149c
