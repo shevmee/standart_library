@@ -37,6 +37,21 @@ public:
         other._ptr = nullptr;
     }
 
+    template <typename T>
+    any& operator= (const T& other)
+    {
+        delete _ptr;
+        _ptr = new Derived<T>(other);
+        return *this;
+    }
+
+    any& operator= (T&& other) noexcept
+    {
+        delete _ptr;
+        _ptr = new Derived<T>(std::move(other));
+        return *this;
+    }
+
     ~any()
     {
         delete _ptr;
