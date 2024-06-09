@@ -15,156 +15,167 @@ private:
     void* _fptr;
 
     using invoke_fn_t = Ret(*)(void*, Args&&...);
-    using construct_fn_t = void(*)(void*, void*);
     using destroy_fn_t = void(*)(void*);
+    using copy_fn_t = void*(*)(const void*, void*);
+    using move_fn_t = void*(*)(void*, void*);
 
     invoke_fn_t invoke_fn;
-    construct_fn_t construct_fn;
     destroy_fn_t destroy_fn;
+    copy_fn_t copy_fn;
+    move_fn_t move_fn;
 
     template <typename Functor>
-    static Ret invoker(void* func, Args&&... args)
+    static Ret invoker(Functor* func, Args&&... args)
     {
-        return std::invoke(*static_cast<Functor*>(func), std::forward<Args>(args)...);
+        return std::invoke(*func, std::forward<Args>(args)...);
     }
 
     template <typename Functor>
-    static void constructor(void* dst, void* src)
+    static void destroyer(Functor* fptr)
     {
-        Functor* srcFunc = static_cast<Functor*>(src);
         if constexpr (sizeof(Functor) > BUFFER_SIZE)
         {
-            *static_cast<void**>(dst) = new Functor(std::move(*srcFunc));
+            delete fptr;
         }
         else
         {
-            new (dst) Functor(std::move(*srcFunc));
+            fptr->~Functor();
         }
     }
 
     template <typename Functor>
-    static void destroyer(void* func)
+    static void* copier(const void* source, void* buffer)
     {
-        Functor* f = static_cast<Functor*>(func);
         if constexpr (sizeof(Functor) > BUFFER_SIZE)
         {
-            delete f;
+            return new Functor(*static_cast<const Functor*>(source));
         }
         else
         {
-            f->~Functor();
+            new(buffer) Functor(*static_cast<const Functor*>(source));
+            return buffer;
+        }
+    }
+
+    template <typename Functor>
+    static void* mover(void* source, void* buffer)
+    {
+        auto src_functor = static_cast<Functor*>(source);
+
+        if constexpr (sizeof(Functor) > BUFFER_SIZE)
+        {
+            auto new_functor = new Functor(std::move(*src_functor));
+            delete src_functor;
+            return new_functor;
+        }
+        else
+        {
+            new(buffer) Functor(std::move(*src_functor));
+            src_functor->~Functor();
+            return buffer;
+        }
+    }
+
+    void clear() {
+        if (_fptr) {
+            destroy_fn(_fptr);
+            _fptr = nullptr;
+            invoke_fn = nullptr;
+            destroy_fn = nullptr;
+            copy_fn = nullptr;
+            move_fn = nullptr;
         }
     }
 public:
     function()
         : _fptr(nullptr)
         , invoke_fn(nullptr)
-        , construct_fn(nullptr)
-        , destroy_fn(nullptr) {}
+        , destroy_fn(nullptr)
+        , copy_fn(nullptr)
+        , move_fn(nullptr) {}
 
     template <typename Functor>
     function(Functor func)
+        : _fptr(&func)
+        , invoke_fn(reinterpret_cast<invoke_fn_t>(&invoker<Functor>))
+        , destroy_fn(reinterpret_cast<destroy_fn_t>(&destroyer<Functor>))
+        , copy_fn(reinterpret_cast<copy_fn_t>(&copier<Functor>))
+        , move_fn(reinterpret_cast<move_fn_t>(&mover<Functor>))
     {
         if constexpr (sizeof(Functor) > BUFFER_SIZE)
         {
-            _fptr = new Functor(std::move(func));
+            _fptr = new Functor(func);
         }
         else
         {
-            new (_buffer) Functor(std::move(func));
+            new(_buffer) Functor(func);
             _fptr = _buffer;
         }
-        invoke_fn = invoker<Functor>;
-        construct_fn = constructor<Functor>;
-        destroy_fn = destroyer<Functor>;
     }
 
     function(const function& other)
+        : _fptr(nullptr)
+        , invoke_fn(other.invoke_fn)
+        , destroy_fn(other.destroy_fn)
+        , copy_fn(other.copy_fn)
+        , move_fn(other.move_fn)
     {
         if (other._fptr)
         {
-            other.construct_fn(_fptr, other._fptr);
-            invoke_fn = other.invoke_fn;
-            construct_fn = other.construct_fn;
-            destroy_fn = other.destroy_fn;
+            _fptr = copy_fn(other._fptr, _buffer);
         }
-        else
-        {
-            _fptr = nullptr;
-            invoke_fn = nullptr;
-            construct_fn = nullptr;
-            destroy_fn = nullptr;
-        }
-
     }
 
     function(function&& other) noexcept
+        : _fptr(nullptr)
+        , invoke_fn(other.invoke_fn)
+        , destroy_fn(other.destroy_fn)
+        , copy_fn(other.copy_fn)
+        , move_fn(other.move_fn)
     {
-        _fptr = other._fptr;
-        invoke_fn = other.invoke_fn;
-        construct_fn = other.construct_fn;
-        destroy_fn = other.destroy_fn;
-
-        other._fptr = nullptr;
-        other.invoke_fn = nullptr;
-        other.construct_fn = nullptr;
-        other.destroy_fn = nullptr;
+        if (other._fptr)
+        {
+            _fptr = move_fn(other._fptr, _buffer);
+            other.clear();
+        }
     }
 
-    function& operator= (const function& other)
-    {
+    function& operator=(const function& other) {
         if (this != &other)
         {
-            if (_fptr)
-            {
-                destroy_fn(_fptr);
-            }
+            clear();
+            invoke_fn = other.invoke_fn;
+            destroy_fn = other.destroy_fn;
+            copy_fn = other.copy_fn;
+            move_fn = other.move_fn;
             if (other._fptr)
             {
-                other.construct_fn(_fptr, other._fptr);
-                invoke_fn = other.invoke_fn;
-                construct_fn = other.construct_fn;
-                destroy_fn = other.destroy_fn;
-            }
-            else
-            {
-                other._fptr = nullptr;
-                other.invoke_fn = nullptr;
-                other.construct_fn = nullptr;
-                other.destroy_fn = nullptr;
+                _fptr = copy_fn(other._fptr, _buffer);
             }
         }
         return *this;
     }
 
-    function& operator= (function&& other) noexcept
-    {
+    function& operator=(function&& other) noexcept {
         if (this != &other)
         {
-            if (_fptr)
-            {
-                destroy_fn(_fptr);
-            }
-            _fptr = other._fptr;
+            clear();
             invoke_fn = other.invoke_fn;
-            construct_fn = other.construct_fn;
             destroy_fn = other.destroy_fn;
-
-            other._fptr = nullptr;
-            other.invoke_fn = nullptr;
-            other.construct_fn = nullptr;
-            other.destroy_fn = nullptr;
+            copy_fn = other.copy_fn;
+            move_fn = other.move_fn;
+            if (other._fptr)
+            {
+                _fptr = move_fn(other._fptr, _buffer);
+                other.clear();
+            }
         }
         return *this;
     }
-
 
     ~function()
     {
-        if (_fptr)
-        {
-            destroy_fn(_fptr);
-        }
+        clear();
     }
 
     Ret operator() (Args&&... args) const

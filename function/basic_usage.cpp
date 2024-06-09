@@ -1,5 +1,6 @@
 #include <functional>
 #include <iostream>
+#include "function.h"
 
 int square(int x)
 {
@@ -29,5 +30,10 @@ int main()
         return x * 10;
     };
     std::cout << f(5) << std::endl;
+
+    function<int(int)> ff = &square;
+    function<int(int)> fff = ff;
+    std::cout << fff(5) << std::endl;
+
 
 }

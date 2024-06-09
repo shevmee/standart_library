@@ -1,11 +1,12 @@
-/home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/function.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/test_app.dir
+/home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/test.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/edit_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/rebuild_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/list_install_components.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/install.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/install/local.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/CMakeFiles/install/strip.dir
+/home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/CMakeFiles/test.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/CMakeFiles/edit_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/CMakeFiles/rebuild_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/CMakeFiles/list_install_components.dir
@@ -14,6 +15,7 @@
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/CMakeFiles/install/strip.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock/CMakeFiles/gmock.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock/CMakeFiles/gmock_main.dir
+/home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock/CMakeFiles/test.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock/CMakeFiles/edit_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock/CMakeFiles/rebuild_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock/CMakeFiles/list_install_components.dir
@@ -22,6 +24,7 @@
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock/CMakeFiles/install/strip.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googletest/CMakeFiles/gtest.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googletest/CMakeFiles/gtest_main.dir
+/home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googletest/CMakeFiles/test.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googletest/CMakeFiles/edit_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googletest/CMakeFiles/rebuild_cache.dir
 /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googletest/CMakeFiles/list_install_components.dir

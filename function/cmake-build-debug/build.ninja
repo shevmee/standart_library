@@ -41,37 +41,6 @@ include CMakeFiles/rules.ninja
 
 cmake_ninja_workdir = /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/
 # =============================================================================
-# Object build statements for EXECUTABLE target function
-
-
-#############################################
-# Order-only phony target for function
-
-build cmake_object_order_depends_target_function: phony || CMakeFiles/function.dir
-
-build CMakeFiles/function.dir/basic_usage.cpp.o: CXX_COMPILER__function_unscanned_Debug /home/shevmee/CLionProjects/standart_library/function/basic_usage.cpp || cmake_object_order_depends_target_function
-  DEP_FILE = CMakeFiles/function.dir/basic_usage.cpp.o.d
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/function.dir
-  OBJECT_FILE_DIR = CMakeFiles/function.dir
-
-
-# =============================================================================
-# Link build statements for EXECUTABLE target function
-
-
-#############################################
-# Link the executable function
-
-build function: CXX_EXECUTABLE_LINKER__function_Debug CMakeFiles/function.dir/basic_usage.cpp.o
-  FLAGS = -g
-  OBJECT_DIR = CMakeFiles/function.dir
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = function
-  TARGET_PDB = function.dbg
-
-# =============================================================================
 # Object build statements for EXECUTABLE target test_app
 
 
@@ -95,14 +64,26 @@ build CMakeFiles/test_app.dir/test_main.cpp.o: CXX_COMPILER__test_app_unscanned_
 #############################################
 # Link the executable test_app
 
-build test_app: CXX_EXECUTABLE_LINKER__test_app_Debug CMakeFiles/test_app.dir/test_main.cpp.o | lib/libgtest_main.a lib/libgtest.a || lib/libgtest.a lib/libgtest_main.a
+build test_app: CXX_EXECUTABLE_LINKER__test_app_Debug CMakeFiles/test_app.dir/test_main.cpp.o | lib/libgtest.a lib/libgtest_main.a lib/libgtest.a || lib/libgtest.a lib/libgtest_main.a
   FLAGS = -g
-  LINK_LIBRARIES = lib/libgtest_main.a  lib/libgtest.a
+  LINK_LIBRARIES = lib/libgtest.a  lib/libgtest_main.a  lib/libgtest.a
   OBJECT_DIR = CMakeFiles/test_app.dir
   POST_BUILD = :
   PRE_LINK = :
   TARGET_FILE = test_app
   TARGET_PDB = test_app.dbg
+
+
+#############################################
+# Utility command for test
+
+build CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug && /home/shevmee/Downloads/CLion-2024.1.2/clion-2024.1.2/bin/cmake/linux/x64/bin/ctest --force-new-ctest-process
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build test: phony CMakeFiles/test.util
 
 
 #############################################
@@ -173,6 +154,18 @@ build install/strip: phony CMakeFiles/install/strip.util
 # Write statements declared in CMakeLists.txt:
 # /home/shevmee/CLionProjects/standart_library/function/CMakeLists.txt
 # =============================================================================
+
+
+#############################################
+# Utility command for test
+
+build googletest/CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest && /home/shevmee/Downloads/CLion-2024.1.2/clion-2024.1.2/bin/cmake/linux/x64/bin/ctest --force-new-ctest-process
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build googletest/test: phony googletest/CMakeFiles/test.util
 
 
 #############################################
@@ -310,6 +303,18 @@ build lib/libgmock_main.a: CXX_STATIC_LIBRARY_LINKER__gmock_main_Debug googletes
 
 
 #############################################
+# Utility command for test
+
+build googletest/googlemock/CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googlemock && /home/shevmee/Downloads/CLion-2024.1.2/clion-2024.1.2/bin/cmake/linux/x64/bin/ctest --force-new-ctest-process
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build googletest/googlemock/test: phony googletest/googlemock/CMakeFiles/test.util
+
+
+#############################################
 # Utility command for edit_cache
 
 build googletest/googlemock/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
@@ -444,6 +449,18 @@ build lib/libgtest_main.a: CXX_STATIC_LIBRARY_LINKER__gtest_main_Debug googletes
 
 
 #############################################
+# Utility command for test
+
+build googletest/googletest/CMakeFiles/test.util: CUSTOM_COMMAND
+  COMMAND = cd /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug/googletest/googletest && /home/shevmee/Downloads/CLion-2024.1.2/clion-2024.1.2/bin/cmake/linux/x64/bin/ctest --force-new-ctest-process
+  DESC = Running tests...
+  pool = console
+  restat = 1
+
+build googletest/googletest/test: phony googletest/googletest/CMakeFiles/test.util
+
+
+#############################################
 # Utility command for edit_cache
 
 build googletest/googletest/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
@@ -534,7 +551,7 @@ build libgtest_main.a: phony lib/libgtest_main.a
 #############################################
 # Folder: /home/shevmee/CLionProjects/standart_library/function/cmake-build-debug
 
-build all: phony function test_app googletest/all
+build all: phony test_app googletest/all
 
 # =============================================================================
 
