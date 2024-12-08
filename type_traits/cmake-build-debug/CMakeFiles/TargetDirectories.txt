@@ -1,0 +1,3 @@
+/home/shevmee/CLionProjects/standart_library/type_traits/cmake-build-debug/CMakeFiles/type_traits.dir
+/home/shevmee/CLionProjects/standart_library/type_traits/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/shevmee/CLionProjects/standart_library/type_traits/cmake-build-debug/CMakeFiles/rebuild_cache.dir

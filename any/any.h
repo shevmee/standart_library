@@ -45,6 +45,7 @@ public:
         return *this;
     }
 
+    template <typename T>
     any& operator= (T&& other) noexcept
     {
         delete _ptr;
