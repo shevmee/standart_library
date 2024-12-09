@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/BasicString.dir/main.cpp.o  -o BasicString 

@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/admin/cpp_trainings/standart_library/string/String.hpp
+stddef.h
+-
+cstring
+-
+memory
+-
+stdexcept
+-
+string_view
+-
+algorithm
+-
+
+/home/admin/cpp_trainings/standart_library/string/main.cpp
+String.hpp
+/home/admin/cpp_trainings/standart_library/string/String.hpp
+iostream
+-
+
