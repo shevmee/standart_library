@@ -1,0 +1,13 @@
+.vscode/
+
+build/
+out/
+bin/
+obj/
+
+*.log          # Log files
+*.bak          # Backup files
+*.swp          # Swap files (e.g., from Vim)
+*.tmp          # Temporary files
+*.DS_Store     # macOS system files
+Thumbs.db      # Windows system files

@@ -1,10 +1,7 @@
 #include "String.hpp"
-#include <cassert>
+#include <iostream>
 
 int main() {
-  String<std::allocator<char>> myString;
-
-  String<> substring("Hello, world!", 0, 5);
-
-  assert(strcmp(substring, "Hello") == 0);
+    BasicString<char> str("HEllo");
+    std::cout << str << std::endl;
 }

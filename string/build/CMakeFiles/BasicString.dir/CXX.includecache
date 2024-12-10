@@ -19,6 +19,8 @@ string_view
 -
 algorithm
 -
+iostream
+-
 
 /home/admin/cpp_trainings/standart_library/string/main.cpp
 String.hpp

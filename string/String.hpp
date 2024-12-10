@@ -5,242 +5,282 @@
 #include <cstring>
 #include <memory>
 #include <stdexcept>
+#include <string_view>
+#include <algorithm>
+#include <iostream>
 
-template <typename Allocator = std::allocator<char>>
-class String {
+template <
+  typename CharT, 
+  typename Traits = std::char_traits<CharT>, 
+  typename Allocator = std::allocator<CharT>
+>
+class BasicString {
 public:
-  using size_type = typename std::allocator_traits<Allocator>::size_type;;
-  static const size_t npos = -1;
+  using value_type = CharT;
+  using allocator_type = Allocator;
+  using size_type = typename std::allocator_traits<allocator_type>::size_type;
+  using pointer = typename std::allocator_traits<allocator_type>::pointer;
+  using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
+  using reference = CharT&;
+  using const_reference = const CharT&;
+  using difference_type = typename std::allocator_traits<allocator_type>::difference_type;
+  using traits_type = Traits;
+
+  static const size_type npos = static_cast<size_type>(-1);
 private:
-  char* m_arr = nullptr;
-  size_type m_size = 0;
-  size_type m_capacity = 0;
-  Allocator alloc;
-  size_type increase_by = 15;
+  pointer data_;
+  size_type size_;
+  size_type capacity_;
+  allocator_type allocator_;
 public:
-  String();
-	String(const String&);
-	String(const String& other, size_type pos, size_t len = npos);
-	String(const char*);
-	String(const char* s, size_t n);
-	String(size_t n, char c);
+  BasicString();
+	BasicString(const BasicString&);
+	BasicString(const BasicString& other, size_type pos, size_type len = npos);
+	BasicString(const CharT*);
+	BasicString(size_t n, CharT c);
 
-  String& operator= (const String&);
+  BasicString& operator=(BasicString);
 
-  ~String();
+  ~BasicString();
 
-  // String& append(const String& str);
-	String& append(const String& str, size_type subpos, size_t sublen = npos);
-	// String& append(const char* s);
-	// String& append(const char* s, size_t n);
-	// String& append(size_type n, char c);
+  size_type find(const BasicString& sub, size_type pos = 0) const;
+  int compare(const BasicString& other) const;
+  bool starts_with(const BasicString& prefix) const;
+  bool ends_with(const BasicString& sub) const;
+
+  const_pointer c_str() const;
+  constexpr size_type size() const;
+  constexpr size_type length() const;
+  constexpr size_type capacity() const;
+  constexpr bool empty() const;
+  constexpr void clear();
 private:
-  void _setSize(const size_t size);
-  void _setCapasity(const size_t cap);
-  void _clearStr(const size_t pos);
-  void _increaseCapacity(const size_t n);
-  void _fillStr(char* other, const size_t len, const size_t pos, char c) const;
-  void _allocateCString(char*& buffer, const size_t n);
-  void _append(const char* other);
-  void _append(const char* other, size_t n);
-  size_t _getLength(const String& str, size_type pos, size_t len) const;
-  void _substr(char*& buffer, const char* other, size_type pos, size_t len);
+  using allocator_traits_type = std::allocator_traits<allocator_type>;
+
+  void allocate_and_copy(const CharT* str, size_t len);
+  void deallocate();
+
+  template <typename T, typename Tr, typename Al>
+  friend std::ostream& operator<<(std::ostream& os, const BasicString<T, Tr, Al>& str);
+
+  template <typename T, typename Tr, typename Al>
+  friend std::istream& operator>>(std::istream& is, BasicString<T, Tr, Al>& str);
 };
 
 #endif
 
-template <typename Allocator>
-String<Allocator>::String()
-{
-  _setCapasity(0);
-  _setSize(0);
+template <typename CharT, typename Traits, typename Allocator>
+inline void BasicString<CharT, Traits, Allocator>::allocate_and_copy(const CharT* str, size_t len)
+{ 
+  data_ = allocator_traits_type::allocate(allocator_, len + 1);
+  std::memcpy(data_, str, len * sizeof(CharT));
+  data_[len] = '\0';
+  size_ = len;
+  capacity_ = len + 1;
 }
 
-template <typename Allocator>
-String<Allocator>::String(const String& other)
+template <typename CharT, typename Traits, typename Allocator>
+inline void BasicString<CharT, Traits, Allocator>::deallocate()
 {
-  append(other.m_arr, other.m_size);
-}
-
-template <typename Allocator>
-String<Allocator>::String(const String& other, size_type pos, size_t len)
-{
-  append(other, pos, len);
-}
-
-template <typename Allocator>
-String<Allocator>::String(const char* copy)
-{
-}
-
-template <typename Allocator>
-String<Allocator>::String(const char* s, size_t n)
-{
-}
-
-template <typename Allocator>
-String<Allocator>::String(size_t n, char c)
-{
-}
-
-template <typename Allocator>
-String<Allocator>& String<Allocator>::operator=(const String &)
-{
-  
-}
-
-template <typename Allocator>
-String<Allocator>::~String()
-{
-  delete m_arr;
-  m_arr = nullptr;
-  m_size = 0;
-  m_capacity = 0;
-  increase_by = 0;
-}
-
-template <typename Allocator>
-void String<Allocator>::_setSize(const size_t size) 
-{
-  if (m_size > size) {
-    _clearStr(size);
-  }
-  else if (m_size < size) {
-    _increaseCapacity(size);
-  }
-
-  m_size = size;
-}
-
-template <typename Allocator>
-void String<Allocator>::_setCapasity(const size_t cap)
-{
-  if (m_capacity == cap && m_arr) return;
-  if (m_capacity > cap) return;
-  m_capacity = cap;
-
-  char* buffer = m_arr;
-  m_arr = nullptr;
-  _allocateCString(m_arr, m_capacity);
-  if (buffer)
+  if (data_)
   {
-    std::memcpy(m_arr, buffer, m_size);
-    m_arr[m_size] = '\0';
+    allocator_traits_type::deallocate(allocator_, data_, capacity_);
+    data_ = nullptr;
+    size_ = 0;
+    capacity_ = 0;
+  }
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::BasicString()
+    : data_(nullptr), size_(0), capacity_(0) {}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::BasicString(const BasicString& other)
+    : data_(nullptr)
+    , size_(other.size_)
+    , capacity_(other.capacity_)
+    , allocator_(other.allocator_) 
+{
+  if (size_ > 0)
+  {
+    data_ = allocator_traits_type::allocate(allocator_, capacity_);
+    std::memcpy(data_, other.data_, size_ * sizeof(CharT));
+    data_[size_] = '\0';
+  } else {
+    data_ = nullptr;
+  }
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::BasicString(const BasicString &other, size_type pos, size_type len)
+    : allocator_(other.allocator_)
+{
+  if (pos > other.size_) {
+    throw std::out_of_range("Position is out of range.");
   }
 
-  delete buffer;
-  buffer = nullptr;
+  size_ = (len == npos) ? other.size_ - pos : std::min(len, other.size_ - pos);
+  capacity_ = size_ + 1;
+  data_ = allocator_traits_type::allocate(allocator_, capacity_);
+
+  std::memcpy(data_, other.data_ + pos, size_ * sizeof(CharT));
+  data_[size_] = '\0';
 }
 
-template <typename Allocator>
-void String<Allocator>::_clearStr(const size_t pos) 
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::BasicString(const CharT* copy)
 {
-  _fillStr(m_arr, m_size, pos, '\0');
-  m_size = pos;
+  size_type len = traits_type::length(copy);
+  allocate_and_copy(copy, len);
 }
 
-template <typename Allocator>
-void String<Allocator>::_increaseCapacity(const size_t n)
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::BasicString(size_t n, CharT c)
 {
-  if (m_capacity > n && m_arr) return;
-
-  size_type cap = m_capacity;
-  while (cap <= n) {
-    cap += increase_by;
-  }
-  ++increase_by;
-
-  _setCapasity(cap);
+  data_ = allocator_traits_type::allocate(allocator_, n + 1);
+  std::memset(data_, c, n);
+  size_ = n;
+  capacity_ = n + 1;
+  data_[size_] = '\0';
 }
 
-template <typename Allocator>
-void String<Allocator>::_fillStr(char* other, const size_t len, const size_t pos, char c) const
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::~BasicString()
 {
-  // size_type begin = pos;
-  // while (begin != len)
+  deallocate();
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline typename BasicString<CharT, Traits, Allocator>::size_type BasicString<CharT, Traits, Allocator>::find(const BasicString &sub, size_type pos) const
+{
+  if (pos > size_) return npos;
+
+  // for (size_type i = pos; i <= size_ - sub.size_; ++i)
   // {
-  //   other[begin++] = c;
+  //   bool match = true;
+  //   for (size_type j = 0; j < sub.size_; ++j)
+  //   {
+  //     if (Traits::eq(data_[i + j], sub.data_[j]))
+  //     {
+  //       continue;
+  //     } else {
+  //       match = false;
+  //       break;
+  //     }
+  //   }
+
+  //   if (match) return i;
   // }
 
-  // other[begin] = '\0';
-  std::memset(other + pos, c, len - pos);
-  other[len] = '\0';
+  // return npos;
+
+  const_pointer start = c_str() + pos;
+  const_pointer result = std::search(start, c_str() + size_, sub.c_str(), sub.c_str() + sub.size());
+  return result != c_str() + size_ ? result - c_str() : npos;
 }
 
-template <typename Allocator>
-void String<Allocator>::_allocateCString(char*& buffer, const size_t n) {
-    if (buffer) {
-        throw std::runtime_error("Buffer is already allocated");
-    }
-
-    buffer = alloc.allocate(n + 1);
-
-    std::uninitialized_fill_n(buffer, n + 1, '\0');
-}
-
-template <typename Allocator>
-String<Allocator>& String<Allocator>::append(const String& str, size_type subpos, size_t sublen)
+template <typename CharT, typename Traits, typename Allocator>
+inline int BasicString<CharT, Traits, Allocator>::compare(const BasicString &other) const
 {
-  sublen = _getLength(str, subpos, sublen);
-  char* buffer = nullptr;
-  _substr(buffer, str.m_arr, subpos, sublen);
-  _append(buffer, sublen);
-  delete buffer;
-  buffer = nullptr;
+  return Traits::compare(c_str(), other.c_str(), std::min(size_, other.size_));
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline bool BasicString<CharT, Traits, Allocator>::starts_with(const BasicString &prefix) const
+{
+  if (prefix.size_ > size_) return false;
+
+  return find(prefix, 0) == 0;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline bool BasicString<CharT, Traits, Allocator>::ends_with(const BasicString &sub) const
+{
+  if (sub.size_ > size_) return false;
+
+  size_type pos = size_ - sub.size_;
+  return find(sub, pos) == pos;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+std::ostream& operator<<(std::ostream& os, const BasicString<CharT, Traits, Allocator>& str) {
+  os << str.c_str();
+  return os;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+std::istream& operator>>(std::istream& is, BasicString<CharT, Traits, Allocator>& str) {
+  str.clear();
+
+  typename BasicString<CharT, Traits, Allocator>::size_type n = 0;
+  constexpr size_t buffer_size = 128;
+
+  CharT buffer[buffer_size];
+
+  while (is.read(buffer, buffer_size))
+  {
+    size_t num_read = is.gcount();
+    if (num_read > 0)
+    {
+      str.allocate_and_copy(buffer, num_read);
+      n += num_read;
+    }
+  }
+
+  if (is.gcount() > 0)
+  {
+    str.allocate_and_copy(buffer, is.gcount());
+  }
+
+  return is;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator> &BasicString<CharT, Traits, Allocator>::operator=(BasicString other)
+{
+  std::swap(data_, other.data_);
+  std::swap(size_, other.size_);
+  std::swap(capacity_, other.capacity_);
+  std::swap(allocator_, other.allocator_);
+
   return *this;
 }
 
-template <typename Allocator>
-inline void String<Allocator>::_append(const char *other)
+template <typename CharT, typename Traits, typename Allocator>
+inline typename BasicString<CharT, Traits, Allocator>::const_pointer BasicString<CharT, Traits, Allocator>::c_str() const
 {
-  append(other, strlen(other));
+  return data_;
 }
 
-template <typename Allocator>
-void String<Allocator>::_append(const char* other, size_t n)
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr typename BasicString<CharT, Traits, Allocator>::size_type BasicString<CharT, Traits, Allocator>::size() const
 {
-  if (!other || n == 0) return;
-
-  increaseCapacity(m_size + n);
-  std::memcpy(m_arr + m_size, other, n);
-
-  operator[](m_size + n) = '\0';
-
-  _setLength(m_size + n);
+  return size_;
 }
 
-template <typename Allocator>
-size_t String<Allocator>::_getLength(const String& str, size_type pos, size_t len) const
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr typename BasicString<CharT, Traits, Allocator>::size_type BasicString<CharT, Traits, Allocator>::length() const
 {
-  if (len == npos)
-  {
-    len = m_size - pos;
-  }
-
-  if (pos + len > str.m_size)
-  {
-    throw;
-  }
-  return len;
+  return size_;
 }
 
-template <typename Allocator>
-void String<Allocator>::_substr(char *&buffer, const char *other, size_type pos, size_t len)
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr typename BasicString<CharT, Traits, Allocator>::size_type BasicString<CharT, Traits, Allocator>::capacity() const
 {
-  if (other == nullptr) {
-        throw std::invalid_argument("Input string (other) is null.");
-    }
+  return capacity_;
+}
 
-    size_t other_len = std::strlen(other);
-    if (pos > other_len) {
-        throw std::out_of_range("Position is out of bounds.");
-    }
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr bool BasicString<CharT, Traits, Allocator>::empty() const
+{
+  return size_ == 0;
+}
 
-    len = std::min(len, other_len - pos);
-
-    _allocateCString(buffer, len);
-
-    std::memcpy(buffer, other + pos, len);
-
-    buffer[len] = '\0';
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr void BasicString<CharT, Traits, Allocator>::clear()
+{
+  deallocate();
+  size_ = 0;
+  capacity_ = 0;
 }
