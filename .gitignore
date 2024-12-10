@@ -1,10 +1,13 @@
+# Ignore VSCode folder
 .vscode/
 
+# Ignore build directories (commonly used for build artifacts)
 build/
 out/
 bin/
 obj/
 
+# Ignore other common files
 *.log          # Log files
 *.bak          # Backup files
 *.swp          # Swap files (e.g., from Vim)
