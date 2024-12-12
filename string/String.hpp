@@ -33,27 +33,54 @@ private:
   size_type capacity_;
   allocator_type allocator_;
 public:
+  /* constructor */
   BasicString();
 	BasicString(const BasicString&);
 	BasicString(const BasicString& other, size_type pos, size_type len = npos);
 	BasicString(const CharT*);
 	BasicString(size_t n, CharT c);
+  BasicString(std::nullptr_t) = delete;
 
-  BasicString& operator=(BasicString);
-
+  /* desturctor */
   ~BasicString();
 
-  size_type find(const BasicString& sub, size_type pos = 0) const;
-  int compare(const BasicString& other) const;
-  bool starts_with(const BasicString& prefix) const;
-  bool ends_with(const BasicString& sub) const;
+  /* operator= */
+  BasicString& operator=(BasicString);
 
+  Allocator get_allocator() const;
+
+  /* element access */
   const_pointer c_str() const;
+  const_pointer data() const;
+  constexpr const_reference operator[](size_type index) const;
+  constexpr reference operator[](size_type index);
+  constexpr const_reference at(size_type index) const;
+  constexpr reference at(size_type index);
+  operator std::basic_string_view<CharT, Traits>() const noexcept;
+
+  /* capacity */
   constexpr size_type size() const;
   constexpr size_type length() const;
   constexpr size_type capacity() const;
   constexpr bool empty() const;
+  constexpr void reserve(size_type new_cap);
+
+  /* modifiers */
+  constexpr void pop_back();
+  constexpr void push_back(CharT ch);
+  constexpr void replace(size_type pos, size_type len, const BasicString& str);
+  constexpr void resize(size_type count, CharT ch);
+  constexpr void erase(size_type pos, size_type len);
   constexpr void clear();
+
+  /* search */
+  size_type find(const BasicString& sub, size_type pos = 0) const;
+
+  /* operations */
+  int compare(const BasicString& other) const;
+  bool starts_with(const BasicString& prefix) const;
+  bool ends_with(const BasicString& sub) const;
+
 private:
   using allocator_traits_type = std::allocator_traits<allocator_type>;
 
@@ -61,10 +88,34 @@ private:
   void deallocate();
 
   template <typename T, typename Tr, typename Al>
-  friend std::ostream& operator<<(std::ostream& os, const BasicString<T, Tr, Al>& str);
+  friend std::basic_ostream<T, Tr>& operator<<(std::basic_ostream<T, Tr>& os, const BasicString<T, Tr, Al>& str);
 
   template <typename T, typename Tr, typename Al>
-  friend std::istream& operator>>(std::istream& is, BasicString<T, Tr, Al>& str);
+  friend std::basic_istream<T, Tr>& operator>>(std::basic_istream<T, Tr>& is, BasicString<T, Tr, Al>& str);
+
+  template <typename T, typename Tr, typename Al>
+  friend std::strong_ordering operator<=>(const BasicString<T, Tr, Al> &lhs, const BasicString<T, Tr, Al> &rhs);
+
+  template <typename T, typename Tr, typename Al>
+  friend bool operator>(const BasicString<T, Tr, Al>& lhs, const BasicString<T, Tr, Al>& rhs);
+
+  template <typename T, typename Tr, typename Al>
+  friend bool operator<(const BasicString<T, Tr, Al>& lhs, const BasicString<T, Tr, Al>& rhs);
+
+  template <typename T, typename Tr, typename Al>
+  friend bool operator<=(const BasicString<T, Tr, Al>& lhs, const BasicString<T, Tr, Al>& rhs);
+
+  template <typename T, typename Tr, typename Al>
+  friend bool operator>=(const BasicString<T, Tr, Al>& lhs, const BasicString<T, Tr, Al>& rhs);
+
+  template <typename T, typename Tr, typename Al>
+  friend bool operator==(const BasicString<T, Tr, Al>& lhs, const BasicString<T, Tr, Al>& rhs);
+
+  template <typename T, typename Tr, typename Al>
+  friend bool operator!=(const BasicString<T, Tr, Al>& lhs, const BasicString<T, Tr, Al>& rhs);
+
+  template <typename T, typename Tr, typename Al>
+  friend constexpr void swap(BasicString<T, Tr, Al>& lhs, BasicString<T, Tr, Al>& rhs) noexcept;
 };
 
 #endif
@@ -204,53 +255,215 @@ inline bool BasicString<CharT, Traits, Allocator>::ends_with(const BasicString &
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const BasicString<CharT, Traits, Allocator>& str) {
+inline constexpr void BasicString<CharT, Traits, Allocator>::pop_back()
+{
+  if (size_ > 0)
+  {
+    size_ -= 1;
+    data_[size_] = '\0';
+  }
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr void BasicString<CharT, Traits, Allocator>::push_back(CharT ch)
+{
+  if (size_ + 1 >= capacity_)
+  {
+    size_type new_cap = capacity_ == 0 ? 1 : capacity_ * 2;
+    pointer new_data = allocator_traits_type::allocate(allocator_, new_cap);
+
+    if (data_)
+    {
+      std::memcpy(new_data, data_, size_ * sizeof(CharT));
+      allocator_traits_type::deallocate(allocator_, data_, capacity_);
+    }
+
+    new_data[size_] = ch;
+    data_ = new_data;
+    size_ += 1;
+    capacity_ = new_cap;
+  } else {
+    data_[size_] = ch;
+    size_ += 1;
+  }
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr void BasicString<CharT, Traits, Allocator>::replace(size_type pos, size_type len, const BasicString& str)
+{
+  if (pos > size_) {
+      throw std::out_of_range("Position is out of range.");
+  }
+
+  if (len > size_) {
+      len = size_;
+  }
+
+  size_type new_size = size_ - len + str.size_;
+
+  if (new_size > capacity_) {
+      size_type new_cap = new_size + 1;
+      pointer new_data = allocator_traits_type::allocate(allocator_, new_cap);
+
+      std::memcpy(new_data, data_, pos * sizeof(CharT));
+      std::memcpy(new_data + pos, str.data_, str.size_ * sizeof(CharT));
+      std::memcpy(new_data + pos + str.size_, data_ + pos + len, (size_ - len - pos) * sizeof(CharT));
+
+      allocator_traits_type::deallocate(allocator_, data_, capacity_);
+
+      data_ = new_data;
+      size_ = new_size;
+      capacity_ = new_cap;
+  }
+  else {
+      std::memcpy(data_ + pos, str.data_, str.size_ * sizeof(CharT));
+      std::memcpy(data_ + pos + str.size_, data_ + pos + len, (size_ - len - pos) * sizeof(CharT));
+      size_ = new_size;
+  }
+
+  data_[size_] = '\0';
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr void BasicString<CharT, Traits, Allocator>::resize(size_type count, CharT ch)
+{
+  if (count > size_)
+  {
+      if (count > capacity_)
+      {
+          pointer new_data = allocator_traits_type::allocate(allocator_, count + 1);
+
+          std::memcpy(new_data, data_, size_ * sizeof(CharT));
+
+          std::memset(new_data + size_, ch, (count - size_) * sizeof(CharT));
+
+          allocator_traits_type::deallocate(allocator_, data_, capacity_);
+
+          data_ = new_data;
+          capacity_ = count + 1;
+      }
+      else
+      {
+          std::memset(data_ + size_, ch, (count - size_) * sizeof(CharT));
+      }
+  }
+  else if (count < size_)
+  {
+      size_ = count;
+  }
+
+  data_[count] = '\0';
+  size_ = count;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr void BasicString<CharT, Traits, Allocator>::erase(size_type pos, size_type len)
+{
+  if (pos > size_) {
+    throw std::out_of_range("Position is out of range.");
+  }
+
+  len = std::min(len, size_ - pos);
+
+  std::memmove(data_ + pos, data_ + pos + len, (size_ - len - pos) * sizeof(CharT));
+  size_ -= len;
+  data_[size_] = '\0';
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os, const BasicString<CharT, Traits, Allocator> &str)
+{
   os << str.c_str();
   return os;
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-std::istream& operator>>(std::istream& is, BasicString<CharT, Traits, Allocator>& str) {
+inline std::basic_istream<CharT, Traits> &operator>>(std::basic_istream<CharT, Traits> &is, BasicString<CharT, Traits, Allocator> &str)
+{
   str.clear();
 
-  typename BasicString<CharT, Traits, Allocator>::size_type n = 0;
-  constexpr size_t buffer_size = 128;
+    typename BasicString<CharT, Traits, Allocator>::size_type n = 0;
+    constexpr size_t buffer_size = 128;
 
-  CharT buffer[buffer_size];
+    CharT buffer[buffer_size];
 
-  while (is.read(buffer, buffer_size))
-  {
-    size_t num_read = is.gcount();
-    if (num_read > 0)
+    while (is.read(buffer, buffer_size))
     {
-      str.allocate_and_copy(buffer, num_read);
-      n += num_read;
+        size_t num_read = is.gcount();
+        if (num_read > 0)
+        {
+            str.allocate_and_copy(buffer, num_read);
+            n += num_read;
+        }
     }
-  }
 
-  if (is.gcount() > 0)
-  {
-    str.allocate_and_copy(buffer, is.gcount());
-  }
+    if (is.gcount() > 0)
+    {
+        str.allocate_and_copy(buffer, is.gcount());
+    }
 
-  return is;
+    return is;
 }
 
 template <typename CharT, typename Traits, typename Allocator>
 inline BasicString<CharT, Traits, Allocator> &BasicString<CharT, Traits, Allocator>::operator=(BasicString other)
 {
-  std::swap(data_, other.data_);
-  std::swap(size_, other.size_);
-  std::swap(capacity_, other.capacity_);
-  std::swap(allocator_, other.allocator_);
-
+  swap(*this, other);
   return *this;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline Allocator BasicString<CharT, Traits, Allocator>::get_allocator() const
+{
+  return allocator_;;
 }
 
 template <typename CharT, typename Traits, typename Allocator>
 inline typename BasicString<CharT, Traits, Allocator>::const_pointer BasicString<CharT, Traits, Allocator>::c_str() const
 {
   return data_;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::const_pointer BasicString<CharT, Traits, Allocator>::data() const
+{
+  return data_;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr BasicString<CharT, Traits, Allocator>::const_reference BasicString<CharT, Traits, Allocator>::operator[](size_type index) const
+{
+  return data_[index];
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr BasicString<CharT, Traits, Allocator>::reference BasicString<CharT, Traits, Allocator>::operator[](size_type index)
+{
+  return data_[index];
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr BasicString<CharT, Traits, Allocator>::const_reference BasicString<CharT, Traits, Allocator>::at(size_type index) const
+{
+  if (index >= size_) {
+    throw std::out_of_range("BasicString::at: position out of range");
+  }
+  return data_[index];
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline constexpr BasicString<CharT, Traits, Allocator>::reference BasicString<CharT, Traits, Allocator>::at(size_type index)
+{
+  if (index >= size_) {
+    throw std::out_of_range("BasicString::at: position out of range");
+  }
+  return data_[index];
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline BasicString<CharT, Traits, Allocator>::operator std::basic_string_view<CharT, Traits>() const noexcept
+{
+  return std::basic_string_view<CharT, Traits>(data_, size_);
 }
 
 template <typename CharT, typename Traits, typename Allocator>
@@ -278,9 +491,112 @@ inline constexpr bool BasicString<CharT, Traits, Allocator>::empty() const
 }
 
 template <typename CharT, typename Traits, typename Allocator>
+inline constexpr void BasicString<CharT, Traits, Allocator>::reserve(size_type new_cap)
+{
+  if (new_cap <= capacity_) return;
+
+  pointer new_data = allocator_traits_type::allocate(allocator_, new_cap);
+
+  std::memcpy(new_data, data_, size_ * sizeof(CharT));
+  allocator_traits_type::deallocate(allocator_, data_, capacity_);
+
+  data_ = new_data;
+  capacity_ = new_cap;
+  data_[size_] = '\0'; 
+}
+
+template <typename CharT, typename Traits, typename Allocator>
 inline constexpr void BasicString<CharT, Traits, Allocator>::clear()
 {
   deallocate();
   size_ = 0;
   capacity_ = 0;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+bool operator>(const BasicString<CharT, Traits, Allocator> &lhs, const BasicString<CharT, Traits, Allocator> &rhs)
+{
+  return lhs <=> rhs == std::strong_ordering::greater;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+bool operator<(const BasicString<CharT, Traits, Allocator> &lhs, const BasicString<CharT, Traits, Allocator> &rhs)
+{
+  return lhs <=> rhs == std::strong_ordering::less;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+bool operator<=(const BasicString<CharT, Traits, Allocator> &lhs, const BasicString<CharT, Traits, Allocator> &rhs)
+{
+  return lhs <=> rhs != std::strong_ordering::greater;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+bool operator>=(const BasicString<CharT, Traits, Allocator> &lhs, const BasicString<CharT, Traits, Allocator> &rhs)
+{
+  return lhs <=> rhs != std::strong_ordering::less;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+bool operator==(const BasicString<CharT, Traits, Allocator> &lhs, const BasicString<CharT, Traits, Allocator> &rhs)
+{
+  return lhs <=> rhs == std::strong_ordering::equal;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+bool operator!=(const BasicString<CharT, Traits, Allocator> &lhs, const BasicString<CharT, Traits, Allocator> &rhs)
+{
+  return lhs <=> rhs != std::strong_ordering::equal;
+}
+
+template <typename T, typename Tr, typename Al>
+inline constexpr void swap(BasicString<T, Tr, Al> &lhs, BasicString<T, Tr, Al> &rhs) noexcept
+{
+  std::swap(lhs.data_, rhs.data_);
+  std::swap(lhs.size_, rhs.size_);
+  std::swap(lhs.capacity_, rhs.capacity_);
+  std::swap(lhs.allocator_, rhs.allocator_);
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+std::strong_ordering operator<=>(const BasicString<CharT, Traits, Allocator> &lhs, const BasicString<CharT, Traits, Allocator> &rhs)
+{
+  if (lhs.size_ < rhs.size_)
+  {
+      return std::strong_ordering::less;
+  }
+  else if (lhs.size_ > rhs.size_)
+  {
+      return std::strong_ordering::greater;
+  }
+
+  for (typename BasicString<CharT, Traits, Allocator>::size_type i = 0; i < lhs.size_; ++i)
+  {
+      if (Traits::lt(lhs.data_[i], rhs.data_[i]))
+      {
+          return std::strong_ordering::less;
+      }
+      else if (Traits::eq(lhs.data_[i], rhs.data_[i]))
+      {
+          continue;
+      }
+      else
+      {
+          return std::strong_ordering::greater;
+      }
+  }
+
+  return std::strong_ordering::equal;
+}
+
+inline BasicString<char> operator"" _s(const char* str, size_t length) {
+  return BasicString<char>(str);
+}
+
+inline BasicString<wchar_t> operator"" _s(const wchar_t* str, size_t length) {
+  return BasicString<wchar_t>(str);
+}
+
+inline BasicString<char16_t> operator"" _s(const char16_t* str, size_t length) {
+  return BasicString<char16_t>(str);
 }

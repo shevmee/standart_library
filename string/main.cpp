@@ -2,6 +2,6 @@
 #include <iostream>
 
 int main() {
-    BasicString<char> str("HEllo");
-    std::cout << str << std::endl;
+    BasicString<wchar_t> str(L"Hello");
+    std::wcout << str << std::endl;
 }

@@ -1,1 +1,0 @@
-/usr/bin/c++     CMakeFiles/BasicStringTests.dir/test_main.cpp.o  -o BasicStringTests  lib/libgtest.a lib/libgtest_main.a -lpthread lib/libgtest.a -lpthread 
