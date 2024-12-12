@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <cstring>
-#include "String.hpp"
+#include "BasicString.hpp"
 
 class BasicStringTest : public ::testing::Test {
 protected:
