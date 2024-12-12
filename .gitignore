@@ -1,16 +1,30 @@
-# Ignore VSCode folder
+# Ignore .vscode directory (for Visual Studio Code settings)
 .vscode/
 
-# Ignore build directories (commonly used for build artifacts)
+# Ignore build directories (for compiled output)
 build/
-out/
-bin/
-obj/
+third_party/
 
-# Ignore other common files
-*.log          # Log files
-*.bak          # Backup files
-*.swp          # Swap files (e.g., from Vim)
-*.tmp          # Temporary files
-*.DS_Store     # macOS system files
-Thumbs.db      # Windows system files
+# Ignore CMakeLists.txt generated files
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+
+# Ignore temporary files
+*.log
+*.tmp
+*.swp
+
+# Ignore IDE-specific files (you can add more based on your IDE)
+.idea/            # JetBrains IDEs (e.g., IntelliJ IDEA, CLion)
+*.user
+*.userprefs
+
+# Ignore compiled binaries
+*.o
+*.a
+*.so
+*.exe
+*.dll
+*.out

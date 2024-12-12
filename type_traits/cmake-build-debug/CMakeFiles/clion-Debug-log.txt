@@ -1,4 +1,0 @@
-/home/shevmee/Downloads/CLion-2024.1.2/clion-2024.1.2/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/shevmee/Downloads/CLion-2024.1.2/clion-2024.1.2/bin/ninja/linux/x64/ninja -G Ninja -S /home/shevmee/CLionProjects/standart_library/type_traits -B /home/shevmee/CLionProjects/standart_library/type_traits/cmake-build-debug
--- Configuring done (0.0s)
--- Generating done (0.0s)
--- Build files have been written to: /home/shevmee/CLionProjects/standart_library/type_traits/cmake-build-debug

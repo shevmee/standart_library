@@ -1,3 +1,0 @@
-/home/shevmee/CLionProjects/standart_library/move/cmake-build-debug/CMakeFiles/move.dir
-/home/shevmee/CLionProjects/standart_library/move/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/shevmee/CLionProjects/standart_library/move/cmake-build-debug/CMakeFiles/rebuild_cache.dir

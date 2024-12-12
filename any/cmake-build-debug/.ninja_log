@@ -1,8 +1,0 @@
-# ninja log v6
-1	28	1717962493541326112	build.ninja	a7a87dd7019557f1
-0	103	1717937503859213551	CMakeFiles/any.dir/any.cpp.o	bba31e0708ddf2f6
-104	150	1717937503962270449	any	c70ff98501942fdd
-4	1534	1717962584113457551	googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o	e6e9f2f019f7e735
-3	5719	1717962584112457508	googletest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o	cfdaaadb4c3f9a34
-1	59	1717962885046113201	lib/libgtest.a	80df2deb98746090
-59	67	1717962885104180831	lib/libgtest_main.a	4d6cce38c0b795eb
