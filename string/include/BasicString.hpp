@@ -82,6 +82,13 @@ public:
   bool starts_with(const BasicString &prefix) const;
   bool ends_with(const BasicString &sub) const;
 
+  std::weak_ordering operator<=>(const BasicString&) const;
+  std::weak_ordering operator<=>(const char*) const;
+  bool operator==(const BasicString&) const;
+  bool operator!=(const BasicString&) const;
+  bool operator==(const char*) const;
+  bool operator!=(const char*) const;
+
 private:
   using allocator_traits_type = std::allocator_traits<allocator_type>;
 
@@ -93,36 +100,8 @@ private:
   operator<<(std::basic_ostream<T, Tr> &os, const BasicString<T, Tr, Al> &str);
 
   template <typename T, typename Tr, typename Al>
-  friend std::basic_istream<T, Tr> &operator>>(std::basic_istream<T, Tr> &is,
-                                               BasicString<T, Tr, Al> &str);
-
-  template <typename T, typename Tr, typename Al>
-  friend std::strong_ordering operator<=>(const BasicString<T, Tr, Al> &lhs,
-                                          const BasicString<T, Tr, Al> &rhs);
-
-  template <typename T, typename Tr, typename Al>
-  friend bool operator>(const BasicString<T, Tr, Al> &lhs,
-                        const BasicString<T, Tr, Al> &rhs);
-
-  template <typename T, typename Tr, typename Al>
-  friend bool operator<(const BasicString<T, Tr, Al> &lhs,
-                        const BasicString<T, Tr, Al> &rhs);
-
-  template <typename T, typename Tr, typename Al>
-  friend bool operator<=(const BasicString<T, Tr, Al> &lhs,
-                         const BasicString<T, Tr, Al> &rhs);
-
-  template <typename T, typename Tr, typename Al>
-  friend bool operator>=(const BasicString<T, Tr, Al> &lhs,
-                         const BasicString<T, Tr, Al> &rhs);
-
-  template <typename T, typename Tr, typename Al>
-  friend bool operator==(const BasicString<T, Tr, Al> &lhs,
-                         const BasicString<T, Tr, Al> &rhs);
-
-  template <typename T, typename Tr, typename Al>
-  friend bool operator!=(const BasicString<T, Tr, Al> &lhs,
-                         const BasicString<T, Tr, Al> &rhs);
+  friend std::basic_istream<T, Tr> &
+  operator>>(std::basic_istream<T, Tr> &is, BasicString<T, Tr, Al> &str);
 
   template <typename T, typename Tr, typename Al>
   friend constexpr void swap(BasicString<T, Tr, Al> &lhs,
@@ -130,6 +109,27 @@ private:
 };
 
 #endif
+
+// TODO: implement iterators
+// template <typename CharT, typename Traits, typename Allocator, typename U>
+// inline BasicString<CharT, Traits, Allocator>::size_type
+// erase(BasicString<CharT, Traits, Allocator>& str, const U& value)
+// {
+//   auto it = std::remove(c.begin(), c.end(), value);
+//   auto r = c.end() - it;
+//   c.erase(it, c.end());
+//   return r;
+// }
+
+// template <typename CharT, typename Traits, typename Allocator, typename Pred>
+// inline BasicString<CharT, Traits, Allocator>::size_type
+// erase_if(BasicString<CharT, Traits, Allocator>& str, Pred pred)
+// {
+//   auto it = std::remove_if(c.begin(), c.end(), pred);
+//   auto r = c.end() - it;
+//   c.erase(it, c.end());
+//   return r;
+// }
 
 template <typename CharT, typename Traits, typename Allocator>
 inline void
@@ -162,7 +162,7 @@ inline BasicString<CharT, Traits, Allocator>::BasicString(
     : data_(nullptr), size_(other.size_), capacity_(other.capacity_),
       allocator_(other.allocator_) {
   if (size_ > 0) {
-    data_ = allocator_traits_type::allocate(allocator_, capacity_);
+    data_ = allocator_traits_type::allocate(allocator_, size_ + 1);
     std::memcpy(data_, other.data_, size_ * sizeof(CharT));
     data_[size_] = '\0';
   } else {
@@ -264,6 +264,60 @@ BasicString<CharT, Traits, Allocator>::ends_with(const BasicString &sub) const {
 }
 
 template <typename CharT, typename Traits, typename Allocator>
+inline std::weak_ordering BasicString<CharT, Traits, Allocator>::operator<=>(const char* other) const
+{
+  return std::lexicographical_compare_three_way(data_, data_ + size_, other, other + std::strlen(other));
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline bool BasicString<CharT, Traits, Allocator>::operator==(const char* other) const
+{
+  return (this->operator<=>(other)) == std::weak_ordering::equivalent;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline bool BasicString<CharT, Traits, Allocator>::operator!=(const char* other) const 
+{
+  return (this->operator<=>(other)) != std::weak_ordering::equivalent;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline bool BasicString<CharT, Traits, Allocator>::operator==(const BasicString &other) const
+{
+  return (this->operator<=>(other)) == std::weak_ordering::equivalent;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline bool BasicString<CharT, Traits, Allocator>::operator!=(const BasicString& other) const 
+{
+  return (this->operator<=>(other)) != std::weak_ordering::equivalent;
+}
+
+template <typename CharT, typename Traits, typename Allocator>
+inline std::weak_ordering BasicString<CharT, Traits, Allocator>::operator<=>(const BasicString &other) const
+{
+  // if (size_ < other.size_) {
+  //   return std::weak_ordering::less;
+  // } else if (size_ > other.size_) {
+  //   return std::weak_ordering::greater;
+  // }
+
+  // for (typename BasicString<CharT, Traits, Allocator>::size_type i = 0;
+  //      i < size_; ++i) {
+  //   if (Traits::lt(data_[i], other.data_[i])) {
+  //     return std::weak_ordering::less;
+  //   } else if (Traits::eq(data_[i], other.data_[i])) {
+  //     continue;
+  //   } else {
+  //     return std::weak_ordering::greater;
+  //   }
+  // }
+
+  // return std::weak_ordering::equivalent;
+  return std::lexicographical_compare_three_way(data_, data_ + size_, other.data_, other.data_ + other.size_);
+}
+
+template <typename CharT, typename Traits, typename Allocator>
 inline constexpr void BasicString<CharT, Traits, Allocator>::pop_back() {
   if (size_ > 0) {
     size_ -= 1;
@@ -273,17 +327,19 @@ inline constexpr void BasicString<CharT, Traits, Allocator>::pop_back() {
 
 template <typename CharT, typename Traits, typename Allocator>
 inline constexpr void
-BasicString<CharT, Traits, Allocator>::push_back(CharT ch) {
+BasicString<CharT, Traits, Allocator>::push_back(CharT ch) 
+{
   if (size_ + 1 >= capacity_) {
     size_type new_cap = capacity_ == 0 ? 1 : capacity_ * 2;
-    pointer new_data = allocator_traits_type::allocate(allocator_, new_cap);
+    pointer new_data = allocator_traits_type::allocate(allocator_, new_cap + 1);
 
     if (data_) {
-      std::memcpy(new_data, data_, size_ * sizeof(CharT));
-      allocator_traits_type::deallocate(allocator_, data_, capacity_);
+        std::memcpy(new_data, data_, size_ * sizeof(CharT));
+        allocator_traits_type::deallocate(allocator_, data_, capacity_);
     }
 
     new_data[size_] = ch;
+    new_data[size_ + 1] = '\0';
     data_ = new_data;
     size_ += 1;
     capacity_ = new_cap;
@@ -498,7 +554,10 @@ BasicString<CharT, Traits, Allocator>::reserve(size_type new_cap) {
 
   pointer new_data = allocator_traits_type::allocate(allocator_, new_cap);
 
-  std::memcpy(new_data, data_, size_ * sizeof(CharT));
+  if (data_ != nullptr) {
+    std::memcpy(new_data, data_, size_ * sizeof(CharT));
+  }
+
   allocator_traits_type::deallocate(allocator_, data_, capacity_);
 
   data_ = new_data;
@@ -513,42 +572,6 @@ inline constexpr void BasicString<CharT, Traits, Allocator>::clear() {
   capacity_ = 0;
 }
 
-template <typename CharT, typename Traits, typename Allocator>
-bool operator>(const BasicString<CharT, Traits, Allocator> &lhs,
-               const BasicString<CharT, Traits, Allocator> &rhs) {
-  return lhs <=> rhs == std::strong_ordering::greater;
-}
-
-template <typename CharT, typename Traits, typename Allocator>
-bool operator<(const BasicString<CharT, Traits, Allocator> &lhs,
-               const BasicString<CharT, Traits, Allocator> &rhs) {
-  return lhs <=> rhs == std::strong_ordering::less;
-}
-
-template <typename CharT, typename Traits, typename Allocator>
-bool operator<=(const BasicString<CharT, Traits, Allocator> &lhs,
-                const BasicString<CharT, Traits, Allocator> &rhs) {
-  return lhs <=> rhs != std::strong_ordering::greater;
-}
-
-template <typename CharT, typename Traits, typename Allocator>
-bool operator>=(const BasicString<CharT, Traits, Allocator> &lhs,
-                const BasicString<CharT, Traits, Allocator> &rhs) {
-  return lhs <=> rhs != std::strong_ordering::less;
-}
-
-template <typename CharT, typename Traits, typename Allocator>
-bool operator==(const BasicString<CharT, Traits, Allocator> &lhs,
-                const BasicString<CharT, Traits, Allocator> &rhs) {
-  return lhs <=> rhs == std::strong_ordering::equal;
-}
-
-template <typename CharT, typename Traits, typename Allocator>
-bool operator!=(const BasicString<CharT, Traits, Allocator> &lhs,
-                const BasicString<CharT, Traits, Allocator> &rhs) {
-  return lhs <=> rhs != std::strong_ordering::equal;
-}
-
 template <typename T, typename Tr, typename Al>
 inline constexpr void swap(BasicString<T, Tr, Al> &lhs,
                            BasicString<T, Tr, Al> &rhs) noexcept {
@@ -556,30 +579,6 @@ inline constexpr void swap(BasicString<T, Tr, Al> &lhs,
   std::swap(lhs.size_, rhs.size_);
   std::swap(lhs.capacity_, rhs.capacity_);
   std::swap(lhs.allocator_, rhs.allocator_);
-}
-
-template <typename CharT, typename Traits, typename Allocator>
-std::strong_ordering
-operator<=>(const BasicString<CharT, Traits, Allocator> &lhs,
-            const BasicString<CharT, Traits, Allocator> &rhs) {
-  if (lhs.size_ < rhs.size_) {
-    return std::strong_ordering::less;
-  } else if (lhs.size_ > rhs.size_) {
-    return std::strong_ordering::greater;
-  }
-
-  for (typename BasicString<CharT, Traits, Allocator>::size_type i = 0;
-       i < lhs.size_; ++i) {
-    if (Traits::lt(lhs.data_[i], rhs.data_[i])) {
-      return std::strong_ordering::less;
-    } else if (Traits::eq(lhs.data_[i], rhs.data_[i])) {
-      continue;
-    } else {
-      return std::strong_ordering::greater;
-    }
-  }
-
-  return std::strong_ordering::equal;
 }
 
 inline BasicString<char> operator"" _s(const char *str, size_t length) {
