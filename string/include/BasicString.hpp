@@ -9,6 +9,9 @@
 #include <stdexcept>
 #include <string_view>
 
+// TODO: implement iterators, operator+ for string_view, const char*,
+// BasicString, optimize work with allocator(select, propagate), SSO
+
 template <typename CharT, typename Traits = std::char_traits<CharT>,
           typename Allocator = std::allocator<CharT>>
 class BasicString {
@@ -82,12 +85,12 @@ public:
   bool starts_with(const BasicString &prefix) const;
   bool ends_with(const BasicString &sub) const;
 
-  std::weak_ordering operator<=>(const BasicString&) const;
-  std::weak_ordering operator<=>(const char*) const;
-  bool operator==(const BasicString&) const;
-  bool operator!=(const BasicString&) const;
-  bool operator==(const char*) const;
-  bool operator!=(const char*) const;
+  std::weak_ordering operator<=>(const BasicString &) const;
+  std::weak_ordering operator<=>(const char *) const;
+  bool operator==(const BasicString &) const;
+  bool operator!=(const BasicString &) const;
+  bool operator==(const char *) const;
+  bool operator!=(const char *) const;
 
 private:
   using allocator_traits_type = std::allocator_traits<allocator_type>;
@@ -100,8 +103,8 @@ private:
   operator<<(std::basic_ostream<T, Tr> &os, const BasicString<T, Tr, Al> &str);
 
   template <typename T, typename Tr, typename Al>
-  friend std::basic_istream<T, Tr> &
-  operator>>(std::basic_istream<T, Tr> &is, BasicString<T, Tr, Al> &str);
+  friend std::basic_istream<T, Tr> &operator>>(std::basic_istream<T, Tr> &is,
+                                               BasicString<T, Tr, Al> &str);
 
   template <typename T, typename Tr, typename Al>
   friend constexpr void swap(BasicString<T, Tr, Al> &lhs,
@@ -110,7 +113,6 @@ private:
 
 #endif
 
-// TODO: implement iterators
 // template <typename CharT, typename Traits, typename Allocator, typename U>
 // inline BasicString<CharT, Traits, Allocator>::size_type
 // erase(BasicString<CharT, Traits, Allocator>& str, const U& value)
@@ -264,38 +266,39 @@ BasicString<CharT, Traits, Allocator>::ends_with(const BasicString &sub) const {
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-inline std::weak_ordering BasicString<CharT, Traits, Allocator>::operator<=>(const char* other) const
-{
-  return std::lexicographical_compare_three_way(data_, data_ + size_, other, other + std::strlen(other));
+inline std::weak_ordering
+BasicString<CharT, Traits, Allocator>::operator<=>(const char *other) const {
+  return std::lexicographical_compare_three_way(data_, data_ + size_, other,
+                                                other + std::strlen(other));
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-inline bool BasicString<CharT, Traits, Allocator>::operator==(const char* other) const
-{
+inline bool
+BasicString<CharT, Traits, Allocator>::operator==(const char *other) const {
   return (this->operator<=>(other)) == std::weak_ordering::equivalent;
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-inline bool BasicString<CharT, Traits, Allocator>::operator!=(const char* other) const 
-{
+inline bool
+BasicString<CharT, Traits, Allocator>::operator!=(const char *other) const {
   return (this->operator<=>(other)) != std::weak_ordering::equivalent;
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-inline bool BasicString<CharT, Traits, Allocator>::operator==(const BasicString &other) const
-{
+inline bool BasicString<CharT, Traits, Allocator>::operator==(
+    const BasicString &other) const {
   return (this->operator<=>(other)) == std::weak_ordering::equivalent;
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-inline bool BasicString<CharT, Traits, Allocator>::operator!=(const BasicString& other) const 
-{
+inline bool BasicString<CharT, Traits, Allocator>::operator!=(
+    const BasicString &other) const {
   return (this->operator<=>(other)) != std::weak_ordering::equivalent;
 }
 
 template <typename CharT, typename Traits, typename Allocator>
-inline std::weak_ordering BasicString<CharT, Traits, Allocator>::operator<=>(const BasicString &other) const
-{
+inline std::weak_ordering BasicString<CharT, Traits, Allocator>::operator<=>(
+    const BasicString &other) const {
   // if (size_ < other.size_) {
   //   return std::weak_ordering::less;
   // } else if (size_ > other.size_) {
@@ -314,7 +317,8 @@ inline std::weak_ordering BasicString<CharT, Traits, Allocator>::operator<=>(con
   // }
 
   // return std::weak_ordering::equivalent;
-  return std::lexicographical_compare_three_way(data_, data_ + size_, other.data_, other.data_ + other.size_);
+  return std::lexicographical_compare_three_way(
+      data_, data_ + size_, other.data_, other.data_ + other.size_);
 }
 
 template <typename CharT, typename Traits, typename Allocator>
@@ -327,15 +331,14 @@ inline constexpr void BasicString<CharT, Traits, Allocator>::pop_back() {
 
 template <typename CharT, typename Traits, typename Allocator>
 inline constexpr void
-BasicString<CharT, Traits, Allocator>::push_back(CharT ch) 
-{
+BasicString<CharT, Traits, Allocator>::push_back(CharT ch) {
   if (size_ + 1 >= capacity_) {
     size_type new_cap = capacity_ == 0 ? 1 : capacity_ * 2;
     pointer new_data = allocator_traits_type::allocate(allocator_, new_cap + 1);
 
     if (data_) {
-        std::memcpy(new_data, data_, size_ * sizeof(CharT));
-        allocator_traits_type::deallocate(allocator_, data_, capacity_);
+      std::memcpy(new_data, data_, size_ * sizeof(CharT));
+      allocator_traits_type::deallocate(allocator_, data_, capacity_);
     }
 
     new_data[size_] = ch;
